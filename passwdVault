@@ -1,0 +1,438 @@
+#!/usr/bin/perl
+
+#I had plans of implementing Encrypt::Simple but it wouldn't run in my script, however it ran on a seperate script. So I left it unimplemented. The two functions are at the end.
+
+
+
+&cls();
+&initialize();
+%usernames = &getUsers();
+
+while (true) {
+	$command = &start();
+
+	if ($command == 0) {
+		&addUser(%usernames);
+	}
+
+	if ($command == 1) {
+		$user = &authenticate(%usernames);
+		&addPasswd($user);
+	}
+	if ($command == 2) {
+		$user = &authenticate(%usernames);
+		%passwords = &getPasswords($user);
+
+		&readPasswords(%passwords);
+	}
+	if ($command == 3) {
+		$user = &authenticate(%usernames);
+		&rmUser($user);
+	}
+	if ($command == 4) {
+		$user = &authenticate(%usernames);
+		&rmPasswd($user);
+	}
+	&cls();
+	%usernames = &getUsers();
+	print "Process complete.\n";
+}
+
+
+sub rmPasswd {
+	
+	print "Enter the credentials you wish to remove. Please input the username: \n";
+	print "Reading input: ";
+	chomp($input = <STDIN>);
+	&inputCheck($input);
+	open my  $in, '<', 'vault';
+	open my $out, '>', 'temp';
+	
+	$valid = 0;
+	while (my $row = <$in>) {
+		chomp($row);
+		$check = substr($row, 0, 1);
+
+		if ($check =~ /[0-9]/) {
+			$line = substr($row, 2);
+			$valid = 0;
+			if ($line =~ /$user/)  {
+				$valid = 1;
+				print $out "$row\n";
+				next;
+			}
+		}
+
+		if ($row =~ /^$input:/) {
+			next;
+		}
+		print $out "$row\n";
+		next;
+
+		
+
+	}
+	close $in;
+	close $out;
+	rename ('temp', 'vault');
+	chmod 0000, 'vault';
+
+}
+
+sub rmUser {
+	chmod 0700, 'vault';
+
+	print "Enter your admin username again.\n[This will remove all existing credentials under that name as well].\n";
+	while (true) {
+		print "Reading input: ";
+		chomp($input = <STDIN>);
+		&inputCheck($input);
+		if ($user eq $input) {
+			last;
+			}
+		print "It did not match. Enter your username again to remove it.\n";
+		}
+
+	open my  $in, '<', 'vault';
+	open my $out, '>', 'temp';
+	
+	$valid = 0;
+	while (my $row = <$in>) {
+		chomp($row);
+		$check = substr($row, 0, 1);
+
+		if ($check =~ /[0-9]/) {
+			$line = substr($row, 2);
+			$valid = 0;
+			if ($line =~ /$user/)  {
+				$valid = 1;
+				next;
+			}
+		}
+
+		if ($valid == 1) {
+				next;
+		}
+		print $out "$row\n";
+		next;
+
+		
+
+	}
+	close $in;
+	close $out;
+	rename ('temp', 'vault');
+	chmod 0000, 'vault';
+
+}
+
+sub addPasswd {
+	
+	chmod 0700, 'vault';
+
+	print "Enter a set of credentials, starting with the username.\n";
+	print "Reading input: ";
+	chomp($first = <STDIN>);
+
+	print "Enter a password for $first.\n";
+	print "Reading input: ";
+	chomp($second = <STDIN>);
+
+
+	open my  $in, '<', 'vault';
+	open my $out, '>', 'temp';
+	
+	while (my $row = <$in>) {
+		chomp($row);
+		$check = substr($row, 0, 1);
+
+		if ($check =~ /[0-9]/) {
+			$line = substr($row, 2);
+			if ($line =~ /$user/)  {
+				print $out "$row\n";
+				print $out "$first:$second\n";
+				next;
+			}
+		}
+		print $out "$row\n";
+		next;
+
+		
+
+	}
+	close $in;
+	close $out;
+	rename ('temp', 'vault');
+	chmod 0000, 'vault';
+}
+
+sub addUser {
+
+	chmod 0700, 'vault';
+
+	open FILE, '>>', 'vault';
+	print "Enter your admin username.\n";
+	print "Reading input: ";
+	chomp($input = <STDIN>);
+	print "Enter your admin password.\n";
+	while (true) {
+		print "Reading input: ";
+		chomp($pass1 = <STDIN>);
+		print "Enter your password again.\n";
+		print "Reading input: ";
+		chomp($pass2 = <STDIN>);
+
+		if ($pass1 eq $pass2) {
+			print "Password created. Thank you.\n";
+			last;
+		}
+		print "Sorry, the password did not match. Please enter your desired password.\n";
+	}
+	$count = 0;
+#	foreach $user (keys %usernames) {
+#		$count ++;
+#	}
+	
+	print FILE "$count:$input:$pass1\n";
+
+	close FILE;
+
+	chmod 0000, 'vault';
+}
+
+sub start {
+	print "\nHere are a list of options. Enter an appropriate option to continue with this program.\n";
+	print "Options:\n";
+	print "adduser\n\tadds a new admin username in which you may log in as.\n";
+	print "addpasswd\n\tadds a set of log-in credentials for storage.\n";
+	print "readpasswd\n\tlog-in to access your saved log-in credentials.\n";
+	print "rmuser\n\tremove an admin user.\n";
+	print "rmpasswd\n\tremoves a set of saved log-in credentials.\n";
+	print "exit\n\texits the program.\n";
+	while (true) {
+		print "Reading input: ";
+		chomp($input = <STDIN>);
+		&inputCheck($input);
+		if ($input eq 'adduser') {
+			return 0;
+		}
+		if ($input eq 'addpasswd') {
+			return 1;
+		}
+		if ($input eq 'readpasswd') {
+			return 2;
+		}
+		if ($input eq 'rmuser') {
+			return 3;
+		}
+		if ($input eq 'rmpasswd') {
+			return 4;
+		}
+		print "Invalid input, please refer to the list of option commands.\n"
+	}
+}
+sub readPasswords {
+	while (true) {
+		print "Enter the account name you wish to retrieve a password from, or 'done' to return.\n";
+		print "Reading input: ";
+		chomp($input = <STDIN>);
+		&inputCheck($input);
+		
+		if ($input eq 'done') {
+			return;
+		}
+			if ($passwords{$input}) {
+				print "Username: $input\nPassword: $passwords{$input}\n";
+				next;
+			}
+			else {
+				print "There is no match in our system. Please try again.";
+			}
+	}
+}
+
+
+sub getPasswords {
+
+	chmod 0700, 'vault';
+
+	open FILE, '<', 'vault';
+	my %passwords;
+	$temp = 0;
+
+	while(my $row = <FILE>) {
+		chomp($row);
+		if (substr($row, 0, 2) =~ /[0-9]:/) {
+			$temp = 0;
+		}
+
+		if ($row =~ /[0-9]:$user/) {
+			$temp = 1;
+			next;
+		}
+
+
+		if($temp == 1) {
+			if ( $row =~ /([^:]*:)/) {
+				$hold = substr($1, 0, -1);
+				if ( $row =~ /([^:]*$)/) {
+					$passwords{$hold} = $1;
+				}
+			}
+		}
+	}
+	chmod 0000, 'vault';
+	return %passwords;
+}
+sub authenticate {
+	while (true) {
+		print "Enter your username.\n";
+		print "Reading input: ";
+		chomp($first = <STDIN>);
+		&inputCheck($first);
+
+		print "Enter your password.\n";
+		print "Reading input: ";
+		chomp($second = <STDIN>);
+		&inputCheck($second);
+
+		foreach $user (keys %usernames) {
+			if ($first eq $user && $second eq $usernames{$first}) {
+				print "\nYou have been authenticated. Welcome back, $user.\n";
+				return $user;
+			}	
+		}
+
+		print "There was no username/password match. Please try again.\n";
+	}
+}
+
+sub getUsers {
+	#This block of code parses the vault file to create a hash of users. Every user has a password
+	#Associated with them.
+	chmod 0700, 'vault';
+	
+	open FILE, '<', 'vault';
+	my %user;
+
+	while (my $row = <FILE>) {
+		chomp($row);
+		$check = substr($row, 0, 1);
+		if ($check =~ /[0-9]/) {
+			$line = substr($row, 2);
+			if ($line =~ /([^:]*)/) {
+				$user{$1} = 'temp';
+				$user = $1;
+		       		if ($line =~ /([^:]*$)/) {
+				$user{$user} = $1;
+				}
+			}	
+		}
+	}
+	close FILE;
+	chmod 0000, 'vault';
+	return %user;
+}
+
+sub initialize {
+	# This block of code looks for the vault file, and if it does not exist
+	# Than it creates a username and password under the newly created vault file.
+	# If it does exist, then it continues the program.
+	print "Welcome to the Password Vault. At any point you wish to exit the program, type 'exit'.\n";
+	if (-e 'vault') {
+		print "First and foremost, would you like to continue with this program?\n";
+		print "Please answer the question with 'yes' or 'no'. Thank you.\n";
+		print "Reading input: ";
+		chomp($input = <STDIN>);
+		if ($input eq 'no' || $input eq 'exit') {
+			die "Thank you for using Password Vault. Enjoy your day.\n";
+		}
+	}
+	else {
+		print "It seems that this your first time using this program.\n";
+		print "Let me get you started. I will create an account for you.\n";
+		print "Please enter a password for your account, $ENV{'USER'}.";
+		print "Your username is the same as your log-in username.\n";
+		print "Don't forget.\n";
+	
+		while (true) {
+			print "Reading input: ";
+		chomp($input = <STDIN>);
+		&inputCheck($input);
+
+		print "For authenitication purposes, please input your password again.\n";
+		chomp($input2 = <STDIN>);
+		&inputCheck($input2);
+		
+
+		if ($input ne $input2) {
+			print "The passwords did not match. Please try again.\n";
+			next;
+			}
+		else {
+			&create_file($input);
+			print "You have been registered. Thank you.\n";
+			last;
+			}	
+		}
+	}
+
+}
+
+sub inputCheck {
+	if ($_[0] eq 'exit') {
+		print "You inputted exit, and now this program will terminate. Thank you.\n";
+		exit;
+	}
+}
+
+sub cls {
+	print "\033[2J";
+	print "\033[0;0H";
+}
+
+sub create_file {
+	open FILE, '>', 'vault';
+	print FILE "0:$ENV{'USER'}:$_[0]\n";
+	close FILE;
+
+	chmod 0000, 'vault';
+}
+
+#sub encrypt {
+#	chmod 0777, 'vault';
+#
+#	open my  $in, '<', 'vault';
+#	open my $out, '>', 'temp';
+#
+#	foreach $line (<$in>) {
+#		chomp($line);
+#		$temp = encrypt($line);
+#		print $out "$temp\n";
+#		}
+#	
+#	close $in;
+#	close $out;
+#	rename ('temp', 'vault');
+#
+#	chmod 0000, 'vault';
+#}
+#
+#sub decrypt {
+#	chmod 0777, 'vault';
+#	open my  $in, '<', 'vault';
+#	open my $out, '>', 'temp';
+#
+#	foreach $line (<$in>) {
+#		chomp($line);
+#		$temp = decrypt($line);
+#		print $out "$temp\n";
+#		}
+#	
+#	close $in;
+#	close $out;
+#	rename ('temp', 'vault');
+#
+#	chmod 0000, 'vault';
+#}
+
