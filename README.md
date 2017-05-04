@@ -7,4 +7,4 @@ It also does a decent job at keeping people who are unfamiliar with changing fil
 
 Instructions:
 The script will run you through all the necessities. Keep in mind that every user needs to create an admin username and password.
-So essentially, you can have multiple people use this script and keep all their personal passwords seperate.
+So essentially, you can have multiple people use this script and keep all their personal passwords separate.
