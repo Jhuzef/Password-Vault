@@ -1,6 +1,6 @@
 # Password-Vault
 A perl script that stores your log-in credentials by storing it into a seperate text file. 
-It utulizies regular experessions to parse the created text file, 'vault.'
+It utilizies regular experessions to parse the created text file, 'vault.'
 It is a script to help user keep track of their log-in credentials, however I advise you keep very private passwords off this script.
 This script offers a good alternative to storing passwords than just writing it into a notepad and saving it.
 It also does a decent job at keeping people who are unfamiliar with changing file permissions away from the text file.
